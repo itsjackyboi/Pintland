@@ -220,6 +220,53 @@ body {
   margin-top: 0.75rem;
   letter-spacing: 0.3px;
 }
+
+/* CALENDAR STYLES */
+.cal-month { margin-bottom: 4px; }
+.cal-month-header { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border-ornate); }
+.cal-month-title { font-family: 'Cinzel', serif; font-weight: 600; font-size: 12px; letter-spacing: 1.5px; color: var(--ink); text-transform: uppercase; }
+.cal-month-pyear { font-style: italic; font-size: 10px; color: var(--ink-light); }
+.cal-month-pyear.gold { color: var(--seal-gold); }
+.cal-month-seasons { margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; }
+.cal-month-seasons span { font-style: italic; font-size: 10px; opacity: 0.85; }
+.cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 2px; }
+.cal-dow-row div { text-align: center; color: var(--ink-light); font-size: 8px; font-family: 'Cinzel', serif; padding: 2px 0 3px; letter-spacing: 0.5px; }
+.cal-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--parchment-darker); }
+.cal-day-empty { min-height: 54px; background: var(--parchment); }
+.cal-day {
+  position: relative;
+  min-height: 54px;
+  padding: 3px 4px 4px;
+  cursor: default;
+  transition: background 0.1s;
+}
+.cal-day:hover { filter: brightness(0.93); }
+.cal-day .day-num { color: var(--ink); font-size: 13px; font-family: 'Cinzel', serif; font-weight: 600; line-height: 1.1; }
+.cal-day .day-keg { font-size: 9px; font-family: 'IM Fell English', serif; font-weight: 600; line-height: 1.3; margin-top: 2px; }
+.cal-day .day-name { font-size: 8px; font-family: 'IM Fell English', serif; font-style: italic; line-height: 1.2; opacity: 0.85; }
+.cal-day .new-year-badge {
+  position: absolute; top: 0; right: 0;
+  background: var(--seal-gold); color: var(--parchment);
+  font-size: 7px; font-family: 'Cinzel', serif; font-weight: 600;
+  padding: 1px 3px; letter-spacing: 0.5px; line-height: 1.5;
+}
+.cal-tooltip {
+  position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+  background: rgba(10, 12, 20, 0.92);
+  border: 1px solid #3d3620;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  padding: 8px 12px; z-index: 999; white-space: nowrap; pointer-events: none;
+  font-family: 'Cinzel', serif;
+}
+.cal-tooltip .tt-day { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+.cal-tooltip .tt-keg { font-size: 10px; color: var(--seal-gold); margin-bottom: 2px; font-family: 'IM Fell English', serif; }
+.cal-tooltip .tt-year { font-size: 9px; font-style: italic; color: #7a6a50; font-family: 'IM Fell English', serif; }
+
+.cal-year-btn.active { background: var(--ink) !important; color: var(--parchment) !important; border-color: var(--ink) !important; }
+
+@media (max-width: 600px) {
+  #cal-grid { grid-template-columns: 1fr !important; }
+}
 </style>
 </head>
 <body>
@@ -231,6 +278,7 @@ body {
 
   <div class="nav-tabs" id="navTabs">
     <div class="nav-tab active" onclick="switchTab('map',this)">🗺 World Map</div>
+    <div class="nav-tab" onclick="switchTab('calendar',this)">Calendar</div>
     <div class="nav-tab" onclick="switchTab('aleforge',this)">Aleforge</div>
     <div class="nav-tab" onclick="switchTab('shanty',this)">Shanty Town</div>
     <div class="nav-tab" onclick="switchTab('providence',this)">Providence</div>
@@ -254,6 +302,31 @@ body {
   </div>
 
   <div id="map-tooltip"><div id="map-tooltip-inner"></div></div>
+
+  <!-- CALENDAR PANEL -->
+  <div class="panel" id="panel-calendar">
+    <div class="ornament">⋅ ⋅ ⋅</div>
+    <div class="parchment-border">
+      <div class="section-header" style="text-align:center;border-bottom:none;margin-bottom:0;">The Pintland Calendar</div>
+      <div style="text-align:center;font-style:italic;color:var(--ink-light);font-size:11px;margin-bottom:6px;letter-spacing:1px;">
+        40 Kegs · 9 Days to the Keg · 360 Days to the Year
+      </div>
+
+      <!-- Year toggle -->
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <button class="cal-year-btn active" onclick="calSetYear(2026,this)" style="font-family:'Cinzel',serif;font-size:13px;padding:6px 30px;border:1px solid var(--border-ornate);cursor:pointer;letter-spacing:2px;background:var(--ink);color:var(--parchment);transition:all 0.15s;">2026</button>
+        <button class="cal-year-btn" onclick="calSetYear(2027,this)" style="font-family:'Cinzel',serif;font-size:13px;padding:6px 30px;border:1px solid var(--border-ornate);cursor:pointer;letter-spacing:2px;background:var(--parchment-dark);color:var(--ink-faded);transition:all 0.15s;">2027</button>
+      </div>
+
+      <div id="cal-note" style="text-align:center;color:var(--ink-light);font-style:italic;font-size:11px;margin-bottom:14px;"></div>
+
+      <!-- Season key dates -->
+      <div id="cal-season-dates" style="display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:center;margin-bottom:18px;padding:10px 16px;border:1px solid var(--border-ornate);background:rgba(244,232,193,0.5);"></div>
+
+      <!-- 12-month grid -->
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px 22px;"></div>
+    </div>
+  </div>
 
 <!-- ALEFORGE -->
   <div class="panel active" id="panel-aleforge">
@@ -1341,6 +1414,168 @@ canvas.addEventListener('touchend', e => {
     tooltip.style.opacity = '0';
   }, 300);
 });
+
+// --- PINTLAND CALENDAR ---
+(function() {
+  const DAY_NAMES = ['Mooringday','Brewsday','Tidecall','Grogsnap','Beastwatch','Lagerhorn','Bloodwake','Keeldrift','Hangover'];
+  const DAY_SHORT = ['Moor','Brew','Tide','Grog','Beast','Lager','Blood','Keel','Hang'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  const SEASONS = {
+    Stormtide: { bg:'#e8ecec', accent:'#3a6a8a', text:'#1a4a6a', label:'Stormtide' },
+    Goldsun:   { bg:'#f5e4a8', accent:'#8b6000', text:'#6a4800', label:'Goldsun' },
+    Veilfrost: { bg:'#eae4ec', accent:'#6a4a8a', text:'#4a2a6a', label:'Veilfrost' },
+    Holiday:   { bg:'#ece0dc', accent:'#8b2020', text:'#6a1010', label:'Holiday Keg' },
+  };
+
+  function getPintland(year, month, day) {
+    var diff = Math.round((new Date(year, month, day) - new Date(2026, 0, 1)) / 86400000);
+    var yi = Math.floor(diff / 360);
+    var doy = (diff % 360) + 1;
+    var season, keg;
+    if      (doy <= 117) { season = 'Stormtide'; keg = Math.ceil(doy / 9); }
+    else if (doy <= 234) { season = 'Goldsun';   keg = Math.ceil((doy - 117) / 9); }
+    else if (doy <= 351) { season = 'Veilfrost'; keg = Math.ceil((doy - 234) / 9); }
+    else                 { season = 'Holiday';   keg = 1; }
+    var dik = ((doy - 1) % 9) + 1;
+    return {
+      season: season, keg: keg, dik: dik,
+      dayName: DAY_NAMES[dik - 1],
+      dayShort: DAY_SHORT[dik - 1],
+      pintYear: 466 + yi, doy: doy,
+      isMooring: dik === 1,
+      isNewYear: doy === 1 && yi > 0,
+    };
+  }
+
+  var calYear = 2026;
+
+  function renderCalendar() {
+    var noteEl = document.getElementById('cal-note');
+    noteEl.textContent = calYear === 2026
+      ? 'Pintland Year 466: Jan 1 \u2013 Dec 26  \u00b7  Year 467 begins: Dec 27'
+      : 'Pintland Year 467: Jan 1 \u2013 Dec 21  \u00b7  Year 468 begins: Dec 22';
+
+    // Season key dates
+    var sdEl = document.getElementById('cal-season-dates');
+    if (calYear === 2026) {
+      sdEl.innerHTML =
+        seasonDateHTML('Stormtide','Jan 1 \u2013 Apr 27','Stormtide') +
+        seasonDateHTML('Goldsun','Apr 28 \u2013 Aug 22','Goldsun') +
+        seasonDateHTML('Veilfrost','Aug 23 \u2013 Dec 17','Veilfrost') +
+        seasonDateHTML('Holiday Keg','Dec 18 \u2013 Dec 26','Holiday') +
+        seasonDateHTML('Year 467 Begins','Dec 27','Stormtide',true);
+    } else {
+      sdEl.innerHTML =
+        seasonDateHTML('Stormtide','Jan 1 \u2013 Apr 22','Stormtide') +
+        seasonDateHTML('Goldsun','Apr 23 \u2013 Aug 17','Goldsun') +
+        seasonDateHTML('Veilfrost','Aug 18 \u2013 Dec 12','Veilfrost') +
+        seasonDateHTML('Holiday Keg','Dec 13 \u2013 Dec 21','Holiday') +
+        seasonDateHTML('Year 468 Begins','Dec 22','Stormtide',true);
+    }
+
+    // 12-month grid
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    for (var m = 0; m < 12; m++) {
+      grid.innerHTML += renderMonth(calYear, m);
+    }
+
+    // Attach hover listeners
+    grid.querySelectorAll('.cal-day').forEach(function(el) {
+      el.addEventListener('mouseenter', function() {
+        var tt = el.querySelector('.cal-tooltip');
+        if (tt) tt.style.display = 'block';
+      });
+      el.addEventListener('mouseleave', function() {
+        var tt = el.querySelector('.cal-tooltip');
+        if (tt) tt.style.display = 'none';
+      });
+    });
+  }
+
+  function seasonDateHTML(label, dates, season, gold) {
+    var s = SEASONS[season];
+    var col = gold ? 'var(--seal-gold)' : s.text;
+    return '<div style="display:flex;align-items:center;gap:7px;">' +
+      '<div style="width:8px;height:8px;background:' + (gold ? 'var(--seal-gold)' : s.accent) + ';border-radius:1px;"></div>' +
+      '<span style="font-size:11px;">' +
+        '<span style="color:' + col + ';font-weight:600;">' + label + ': </span>' +
+        '<span style="color:var(--ink-light);font-style:italic;">' + dates + '</span>' +
+      '</span></div>';
+  }
+
+  function renderMonth(year, month) {
+    var dim = new Date(year, month + 1, 0).getDate();
+    var fd = new Date(year, month, 1).getDay();
+    var seasonsSeen = [], yearsSeen = [];
+    for (var d = 1; d <= dim; d++) {
+      var pd = getPintland(year, month, d);
+      if (seasonsSeen.indexOf(pd.season) === -1) seasonsSeen.push(pd.season);
+      if (yearsSeen.indexOf(pd.pintYear) === -1) yearsSeen.push(pd.pintYear);
+    }
+    var hasYearChange = yearsSeen.length > 1;
+
+    var html = '<div class="cal-month">';
+    // Header
+    html += '<div class="cal-month-header"><div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+    html += '<div class="cal-month-title">' + MONTHS[month] + '</div>';
+    html += '<div class="cal-month-pyear' + (hasYearChange ? ' gold' : '') + '">' +
+      (hasYearChange ? 'Y' + yearsSeen[0] + '\u2192' + yearsSeen[1] : 'Y' + yearsSeen[0]) + '</div>';
+    html += '</div>';
+    html += '<div class="cal-month-seasons">';
+    for (var si = 0; si < seasonsSeen.length; si++) {
+      var sn = seasonsSeen[si];
+      html += '<span style="color:' + SEASONS[sn].text + ';">' + SEASONS[sn].label + '</span>';
+    }
+    html += '</div></div>';
+
+    // DOW row
+    html += '<div class="cal-dow-row">';
+    for (var di = 0; di < DOW.length; di++) html += '<div>' + DOW[di] + '</div>';
+    html += '</div>';
+
+    // Day grid
+    html += '<div class="cal-day-grid">';
+    for (var e = 0; e < fd; e++) html += '<div class="cal-day-empty"></div>';
+    for (var d = 1; d <= dim; d++) {
+      var pd = getPintland(year, month, d);
+      var s = SEASONS[pd.season];
+      var borderTop = pd.isMooring ? '2px solid ' + s.accent : '1px solid var(--parchment-darker)';
+      var borderLeft = pd.isNewYear ? '3px solid var(--seal-gold)' : 'none';
+      html += '<div class="cal-day" style="background:' + s.bg + ';border-top:' + borderTop + ';border-left:' + borderLeft + ';">';
+      if (pd.isNewYear) {
+        html += '<div class="new-year-badge">Y' + pd.pintYear + '</div>';
+      }
+      html += '<div class="day-num">' + d + '</div>';
+      html += '<div class="day-keg" style="color:' + s.accent + ';">' + (pd.season === 'Holiday' ? 'HK' : 'K' + pd.keg) + '</div>';
+      html += '<div class="day-name" style="color:' + s.text + ';">' + pd.dayShort + '</div>';
+      // Tooltip
+      html += '<div class="cal-tooltip" style="display:none;">';
+      html += '<div class="tt-day" style="color:' + s.text + ';">' + pd.dayName + '</div>';
+      html += '<div class="tt-keg">' + (pd.season === 'Holiday' ? 'Holiday Keg' : 'Keg ' + pd.keg + ' \u00b7 ' + pd.season) + '</div>';
+      html += '<div class="tt-year">Pintland Year ' + pd.pintYear + ' \u00b7 Day ' + pd.doy + ' of 360</div>';
+      html += '</div>';
+      html += '</div>';
+    }
+    // Fill remaining cells
+    var totalCells = fd + dim;
+    while (totalCells % 7) { html += '<div class="cal-day-empty"></div>'; totalCells++; }
+    html += '</div></div>';
+    return html;
+  }
+
+  window.calSetYear = function(y, btn) {
+    calYear = y;
+    document.querySelectorAll('.cal-year-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderCalendar();
+  };
+
+  // Initial render
+  renderCalendar();
+})();
 </script>
 </body>
 </html>
