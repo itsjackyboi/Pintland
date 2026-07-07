@@ -244,6 +244,7 @@ body {
 .cal-day .day-num { color: var(--ink); font-size: 13px; font-family: 'Cinzel', serif; font-weight: 600; line-height: 1.1; }
 .cal-day .day-keg { font-size: 9px; font-family: 'IM Fell English', serif; font-weight: 600; line-height: 1.3; margin-top: 2px; }
 .cal-day .day-name { font-size: 8px; font-family: 'IM Fell English', serif; font-style: italic; line-height: 1.2; opacity: 0.85; }
+.cal-day .day-holiday { font-size: 7px; font-family: 'IM Fell English', serif; font-weight: 600; line-height: 1.15; margin-top: 2px; color: var(--seal-red); }
 .cal-day .new-year-badge {
   position: absolute; top: 0; right: 0;
   background: var(--seal-gold); color: var(--parchment);
@@ -273,7 +274,7 @@ body {
 <div class="dashboard">
   <div class="header">
     <h1>✦ Pintland Isles — The World Report ✦</h1>
-    <div class="subtitle">A Survey of Factions, Faiths & Figures — Six Months After the Stewards of Aleforge</div>
+    <div class="subtitle">A Survey of Factions, Faiths & Figures — Cycle 94, Year 466</div>
   </div>
 
   <div class="nav-tabs" id="navTabs">
@@ -1018,9 +1019,6 @@ body {
     </div>
   </div>
 
-  <div class="ornament" style="margin-top:1rem;color:var(--ink-light);font-size:12px;text-align:center;font-style:italic;">
-    — Scribed under seal of the Aleforge Chronicle, Year of the Dread Harrow —
-  </div>
 </div>
 
 
@@ -1199,9 +1197,6 @@ body {
     </div>
   </div>
 
-  <div class="ornament" style="margin-top:1rem;color:var(--ink-light);font-size:12px;text-align:center;font-style:italic;">
-    — Scribed under seal of the Aleforge Chronicle, Year of the Dread Harrow —
-  </div>
 </div>
 
 <script>
@@ -1429,6 +1424,22 @@ canvas.addEventListener('touchend', e => {
     Holiday:   { bg:'#ece0dc', accent:'#8b2020', text:'#6a1010', label:'Holiday Keg' },
   };
 
+  var HOLIDAYS = {
+    115: 'Providas',
+    117: 'Brewmasters Eve',
+    118: 'Brewmasters Day',
+    162: 'Beer Day',
+    232: 'Liquor Day',
+    235: 'Night of the False Sun',
+    260: 'The Unholy Pilgrimage',
+    270: 'Night of the Earthen Veil',
+    323: 'The Beggars Dance'
+  };
+  function getHoliday(doy) {
+    if (doy >= 352 && doy <= 360) return 'Hoppy Holidays';
+    return HOLIDAYS[doy] || null;
+  }
+
   function getPintland(year, month, day) {
     var diff = Math.round((new Date(year, month, day) - new Date(2026, 0, 1)) / 86400000);
     var yi = Math.floor(diff / 360);
@@ -1443,7 +1454,7 @@ canvas.addEventListener('touchend', e => {
       season: season, keg: keg, dik: dik,
       dayName: DAY_NAMES[dik - 1],
       dayShort: DAY_SHORT[dik - 1],
-      pintYear: 466 + yi, doy: doy,
+      pintYear: 466 + yi, cycle: Math.floor((466 + yi) / 5) + 1, doy: doy,
       isMooring: dik === 1,
       isNewYear: doy === 1 && yi > 0,
     };
@@ -1454,8 +1465,8 @@ canvas.addEventListener('touchend', e => {
   function renderCalendar() {
     var noteEl = document.getElementById('cal-note');
     noteEl.textContent = calYear === 2026
-      ? 'Pintland Year 466: Jan 1 \u2013 Dec 26  \u00b7  Year 467 begins: Dec 27'
-      : 'Pintland Year 467: Jan 1 \u2013 Dec 21  \u00b7  Year 468 begins: Dec 22';
+      ? 'Cycle 94  \u00b7  Pintland Year 466: Jan 1 \u2013 Dec 26  \u00b7  Year 467 begins: Dec 27'
+      : 'Cycle 94  \u00b7  Pintland Year 467: Jan 1 \u2013 Dec 21  \u00b7  Year 468 begins: Dec 22';
 
     // Season key dates
     var sdEl = document.getElementById('cal-season-dates');
@@ -1521,8 +1532,9 @@ canvas.addEventListener('touchend', e => {
     // Header
     html += '<div class="cal-month-header"><div style="display:flex;justify-content:space-between;align-items:flex-start;">';
     html += '<div class="cal-month-title">' + MONTHS[month] + '</div>';
+    var cycleNum = Math.floor(yearsSeen[0] / 5) + 1;
     html += '<div class="cal-month-pyear' + (hasYearChange ? ' gold' : '') + '">' +
-      (hasYearChange ? 'Y' + yearsSeen[0] + '\u2192' + yearsSeen[1] : 'Y' + yearsSeen[0]) + '</div>';
+      'C' + cycleNum + ' \u00b7 ' + (hasYearChange ? 'Y' + yearsSeen[0] + '\u2192' + yearsSeen[1] : 'Y' + yearsSeen[0]) + '</div>';
     html += '</div>';
     html += '<div class="cal-month-seasons">';
     for (var si = 0; si < seasonsSeen.length; si++) {
@@ -1542,6 +1554,7 @@ canvas.addEventListener('touchend', e => {
     for (var d = 1; d <= dim; d++) {
       var pd = getPintland(year, month, d);
       var s = SEASONS[pd.season];
+      var hol = getHoliday(pd.doy);
       var borderTop = pd.isMooring ? '2px solid ' + s.accent : '1px solid var(--parchment-darker)';
       var borderLeft = pd.isNewYear ? '3px solid var(--seal-gold)' : 'none';
       html += '<div class="cal-day" style="background:' + s.bg + ';border-top:' + borderTop + ';border-left:' + borderLeft + ';">';
@@ -1551,11 +1564,13 @@ canvas.addEventListener('touchend', e => {
       html += '<div class="day-num">' + d + '</div>';
       html += '<div class="day-keg" style="color:' + s.accent + ';">' + (pd.season === 'Holiday' ? 'HK' : 'K' + pd.keg) + '</div>';
       html += '<div class="day-name" style="color:' + s.text + ';">' + pd.dayShort + '</div>';
+      if (hol) html += '<div class="day-holiday">' + hol + '</div>';
       // Tooltip
       html += '<div class="cal-tooltip" style="display:none;">';
       html += '<div class="tt-day" style="color:' + s.text + ';">' + pd.dayName + '</div>';
       html += '<div class="tt-keg">' + (pd.season === 'Holiday' ? 'Holiday Keg' : 'Keg ' + pd.keg + ' \u00b7 ' + pd.season) + '</div>';
-      html += '<div class="tt-year">Pintland Year ' + pd.pintYear + ' \u00b7 Day ' + pd.doy + ' of 360</div>';
+      if (hol) html += '<div class="tt-holiday" style="color:var(--seal-red);font-size:10px;font-weight:600;font-family:\'IM Fell English\',serif;margin-bottom:2px;">' + hol + '</div>';
+      html += '<div class="tt-year">Cycle ' + pd.cycle + ' \u00b7 Pintland Year ' + pd.pintYear + ' \u00b7 Day ' + pd.doy + ' of 360</div>';
       html += '</div>';
       html += '</div>';
     }
